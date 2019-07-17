@@ -5,6 +5,8 @@ import imutils
 import time
 import cv2
 import os
+import json
+import csv
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -14,6 +16,8 @@ ap.add_argument("-o", "--output", required=False,
 	help="path to output video")
 ap.add_argument("-y", "--yolo", required=True,
 	help="base path to YOLO directory")
+ap.add_argument("-b", "--bbox", required=False, default=True,
+	help="turn on bounding box")
 ap.add_argument("-c", "--confidence", type=float, default=0.5,
 	help="minimum probability to filter weak detections")
 ap.add_argument("-t", "--threshold", type=float, default=0.3,
@@ -60,6 +64,8 @@ except:
 	print("[INFO] no approx. completion time can be provided")
 	total = -1
 
+numHuman = dict()
+start = time.time()
 # loop over frames from the video file stream
 while True:
 	# read the next frame from the file
@@ -80,9 +86,9 @@ while True:
 	blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416),
 		swapRB=True, crop=False)
 	net.setInput(blob)
-	start = time.time()
+	# start = time.time()
 	layerOutputs = net.forward(ln)
-	end = time.time()
+	# end = time.time()
 
 	# initialize our lists of detected bounding boxes, confidences,
 	# and class IDs, respectively
@@ -121,6 +127,8 @@ while True:
 				boxes.append([x, y, int(width), int(height)])
 				confidences.append(float(confidence))
 				classIDs.append(classID)
+				print(classIDs)
+				numHuman[time.time()-start] = classIDs.count(0)
 
 	# apply non-maxima suppression to suppress weak, overlapping
 	# bounding boxes
@@ -135,17 +143,30 @@ while True:
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
 
+
 			# draw a bounding box rectangle and label on the frame
-			color = [int(c) for c in COLORS[classIDs[i]]]
-			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-			text = "{}: {:.4f}".format(LABELS[classIDs[i]],
-				confidences[i])
-			cv2.putText(frame, text, (x, y - 5),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+			if args["bbox"] is True:
+				color = [int(c) for c in COLORS[classIDs[i]]]
+				cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+				text = "{}: {:.4f}".format(LABELS[classIDs[i]],
+					confidences[i])
+				cv2.putText(frame, text, (x, y - 5),
+					cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 	cv2.imshow('detector', frame)
 
 	if cv2.waitKey(1) & 0xFF == ord('q'):
+		end = time.time()
+		with open('result.json', 'w') as jd:
+			json.dump(numHuman, jd)
+
+		with open('result_csv.csv', 'w') as cd:
+			writer = csv.DictWriter(cd, fieldnames=['timestamp', 'count'])
+			writer.writeheader()
+			for key in numHuman.keys():
+				cd.write("%s,%s\n"%(key,numHuman[key]))
+
+
 		break
 
 vs.release()
