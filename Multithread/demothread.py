@@ -1,7 +1,7 @@
 import logging
 import threading
 import time
-
+import datetime
 import numpy as np
 import argparse
 import imutils
@@ -25,8 +25,8 @@ ap.add_argument("-b", "--bbox", required=False, default=True,
     help="turn on bounding box")
 args = vars(ap.parse_args())
 
-Q = Queue(maxsize=1)
-
+Q = Queue(maxsize=30)
+numF = 0
 # vs = cv2.VideoCapture(0)
 
 # _, frame = vs.read()
@@ -34,10 +34,12 @@ Q = Queue(maxsize=1)
 def thread1_function(name):
     ## Reading frames
     global Q
+    global numF
     logging.info("Thread %s: starting ", name)
     vs = cv2.VideoCapture(0)
     while True:
         _, frame = vs.read()
+        numF += 1
         # print("thread 1:", frame)
         Q.put(frame)
         print("Thread 1: starting ", Q.qsize())
@@ -54,21 +56,30 @@ def thread2_function(name):
 
     detector.prepareModel()
 
+    start = datetime.datetime.now()
+    # numFrames = 0
+
     while True:
+        ### GEtting rid of frames.
+        ### TO be done while recording. 
+        for i in range(14):
+            Q.get()
+        
         frame = Q.get()
-        # print(frame.shape)
-        # print("Thread 2: starting ", Q.qsize())
-        # print(frame)
+        
+        print("Thread 2: starting ", Q.qsize())
+
+        # numFrames += 1
         out = detector.runInference(frame)
-        # print(out.shape)
 
         if args["bbox"] is True:
             cv2.imshow('detector', out)
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("FPS: ", numF/(datetime.datetime.now()-start).total_seconds())
                 break
         else:
             print(out)
-            ## TO STOP THIS CTRL+C
+
 
     logging.info("Thread %s: finishing", name)
 

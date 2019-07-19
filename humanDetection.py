@@ -3,6 +3,7 @@ import numpy as np
 import time
 import cv2
 import os
+import datetime
 import argparse
 
 from detection.Detection import yoloDetection
@@ -29,16 +30,21 @@ detector.prepareModel()
 
 vs = cv2.VideoCapture(0)
 
+start = datetime.datetime.now()
+numF = 0
 while True:
 	(grabbed, frame) = vs.read()
+	
 	if not grabbed:
 		break
 
 	out = detector.runInference(frame)
-
+	numF += 1
+	
 	if args["bbox"] is True:
 		cv2.imshow('detector', out)
 		if cv2.waitKey(1) & 0xFF == ord('q'):
+			print("FPS: ", numF/(datetime.datetime.now()-start).total_seconds())
 			break
 	else:
 		print(out)

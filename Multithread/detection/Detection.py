@@ -8,6 +8,8 @@ import json
 import csv
 
 class yoloDetection:
+	# __slots__ = input, path_yolo_files, confidence, threshold, bbox, _LABELS, _COLORS, _net,
+	# _ln, _W, _H
 	def __init__(self, path_yolo_files, inputPort=0, confidence=0.5, threshold=0.3, bbox=True):
 		"""
 		inputPort = Input file path or Port number to camera
