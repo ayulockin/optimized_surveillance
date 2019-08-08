@@ -34,23 +34,21 @@ vs = cv2.VideoCapture(0)
 
 while True:
 	_, frame = vs.read()
-    image_height, image_width, _ = frame.shape
+	image_height, image_width, _ = frame.shape
 
-    model.setInput(cv2.dnn.blobFromImage(frame, size=(300, 300), swapRB=True))
-    output = model.forward()
+	model.setInput(cv2.dnn.blobFromImage(frame, size=(300, 300), swapRB=True))
+	output = model.forward()
+	for detection in output[0, 0, :, :]:
+		confidence = detection[2]
+		if confidence > .5:
+			class_id = detection[1]
+			class_name=id_class_name(class_id,classNames)
+			if class_name == 'person':
+				print(str(str(class_id) + " " + str(detection[2])  + " " + class_name))
 
-    for detection in output[0, 0, :, :]:
-    	confidence = detection[2]
-    	if confidence > .5:
-        class_id = detection[1]
-        class_name=id_class_name(class_id,classNames)
-        if class_name == 'person':
-        	print(str(str(class_id) + " " + str(detection[2])  + " " + class_name))
-
-
-    cv2.imshow('image', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+	cv2.imshow('image', frame)
+	if cv2.waitKey(1) & 0xFF == ord('q'):
+		break
 
 vs.release()
 cv2.destroyAllWindows()
